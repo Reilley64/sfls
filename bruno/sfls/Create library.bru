@@ -1,0 +1,19 @@
+meta {
+  name: Create library
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/libraries
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Movies",
+    "path": "/Volumes/media/tv",
+    "mediaType": "tvshow"
+  }
+}
