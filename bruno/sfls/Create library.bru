@@ -7,13 +7,17 @@ meta {
 post {
   url: http://localhost:8080/libraries
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJzdWIiOjMxMDQwNjUzMjcxNjA0MDE5MiwiZXhwIjoxNzQ2NjI0Mjg3LCJpYXQiOjE3NDY1Mzc4ODd9.pM74CJnNFxpJdE1zKwntoRyPQ2PHEdIoiogJbmCQHqIBI6SL1YaawNV6Oyv0VauonoUpVvJ0UH7hVUOM0_rUBQ
 }
 
 body:json {
   {
     "name": "Movies",
-    "path": "/Volumes/media/tv",
-    "mediaType": "tvshow"
+    "path": "/Volumes/media/movies",
+    "mediaType": "movie"
   }
 }

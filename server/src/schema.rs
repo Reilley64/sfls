@@ -1,10 +1,23 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    history (id) {
+        id -> Int8,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+        media_id -> Int8,
+        user_id -> Int8,
+        position -> Int8,
+    }
+}
+
+diesel::table! {
     libraries (id) {
-        id -> BigInt,
-        created_at -> Text,
-        updated_at -> Text,
+        id -> Int8,
+        created_at -> Timestamp,
+        created_by -> Text,
+        updated_at -> Timestamp,
+        updated_by -> Text,
         name -> Text,
         path -> Text,
         media_type -> Text,
@@ -13,26 +26,47 @@ diesel::table! {
 
 diesel::table! {
     media (id) {
-        id -> BigInt,
-        created_at -> Text,
-        updated_at -> Text,
+        id -> Int8,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
         #[sql_name = "type"]
         type_ -> Text,
-        nfo_id -> Nullable<BigInt>,
-        path -> Text,
+        path -> Nullable<Text>,
         video_file -> Nullable<Text>,
+        video_file_size -> Nullable<Int8>,
+        poster_file -> Nullable<Text>,
+        thumbnail_file -> Nullable<Text>,
+        fanart_file -> Nullable<Text>,
+        logo_file -> Nullable<Text>,
+        banner_file -> Nullable<Text>,
         title -> Text,
-        season -> Nullable<Integer>,
-        episode -> Nullable<Integer>,
-        attributes -> Text,
-        library_id -> BigInt,
-        parent_id -> Nullable<BigInt>,
+        season -> Nullable<Int4>,
+        episode -> Nullable<Int4>,
+        attributes -> Jsonb,
+        parent_id -> Nullable<Int8>,
+        library_id -> Int8,
     }
 }
 
+diesel::table! {
+    users (id) {
+        id -> Int8,
+        created_at -> Timestamp,
+        created_by -> Text,
+        updated_at -> Timestamp,
+        updated_by -> Text,
+        #[max_length = 255]
+        email -> Varchar,
+        #[max_length = 255]
+        password -> Varchar,
+        #[max_length = 255]
+        name -> Varchar,
+        is_admin -> Bool,
+    }
+}
+
+diesel::joinable!(history -> media (media_id));
+diesel::joinable!(history -> users (user_id));
 diesel::joinable!(media -> libraries (library_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    libraries,
-    media,
-);
+diesel::allow_tables_to_appear_in_same_query!(history, libraries, media, users,);

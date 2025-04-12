@@ -4,22 +4,28 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-openapi = { path = "../openapi" }
+anyhow = "1.0.98"
 async-trait = "0.1.88"
-axum = "0.8.3"
-axum-extra = "0.10.1"
-bon = "3.5.2"
-chrono = { version = "0.4.40", features = ["serde"] }
-diesel = { version = "2.2.9", features = ["chrono", "serde_json", "sqlite", "returning_clauses_for_sqlite_3_35"] }
-diesel_cli = { version = "2.2.9", default-features = false, features = ["sqlite"] }
+axum = "0.8.4"
+axum-extra = { version = "0.10.1", features = ["query"] }
+chrono = { version = "0.4.41", features = ["serde"] }
+deadpool = "0.12.2"
+diesel = { version = "2.2.10", features = ["chrono", "serde_json"] }
+diesel-async = { version = "0.5.2", features = ["deadpool", "postgres"] }
 dotenvy = "0.15.7"
+image = "0.25.6"
 infer = "0.19.0"
-quick-xml = { version = "0.37.4", features = ["serialize"] }
-serde = "1.0.219"
+jsonwebtoken = "9.3.1"
+num_cpus = "1.16.0"
+password-auth = "1.0.0"
+quick-xml = { version = "0.37.5", features = ["serialize"] }
+openssl = "0.10.72"
+serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-tokio = "1.44.1"
+tokio = { version = "1.44.2", features = ["fs", "rt-multi-thread"] }
+tokio-util = "0.7.15"
+tower-http = { version = "0.6.2", features = ["trace"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-effectum = "0.7.0"
-rs-snowflake = "0.6.0"
 regex = "1.11.1"
+reqwest = { version = "0.12.15", features = ["json"] }

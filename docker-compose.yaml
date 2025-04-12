@@ -1,0 +1,7 @@
+services:
+  database:
+    image: pgedge/pgedge:pg16-latest
+    ports:
+      - "5432:5432"
+    volumes:
+      - "./db.json:/home/pgedge/db.json"

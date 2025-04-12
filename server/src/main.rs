@@ -1,70 +1,111 @@
-use crate::jobs::{scan_folder_job, scan_library_job, JobContext, ScannerFactory};
-use crate::r#impl::{OpenAPIImpl, Repositories};
-use crate::repositories::library::LibraryRepository;
-use crate::repositories::media::MediaRepository;
-use diesel::connection::SimpleConnection;
-use diesel::{Connection, SqliteConnection};
-use effectum::{JobRunner, Queue, Worker};
-use snowflake::SnowflakeIdGenerator;
-use std::path::PathBuf;
+use crate::factories::artwork_fetcher::ArtworkFetcherFactory;
+use crate::factories::library_scanner::ScannerFactory;
+use crate::jobs::Job;
+use crate::state::AppState;
+use axum::Router;
+use diesel_async::pooled_connection::deadpool::Pool;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::AsyncPgConnection;
+use openssl::pkey::PKey;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Semaphore};
+use tower_http::trace::TraceLayer;
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 
-mod r#impl;
+mod clients;
+mod errors;
+mod factories;
 mod jobs;
-mod libraries;
-mod media;
+mod middlware;
 mod models;
-mod repositories;
-mod schema;
 mod nfo;
-mod scanners;
+mod repositories;
+mod routes;
+mod schema;
+mod state;
+mod views;
+
+const PRIVATE_KEY_PATH: &str = "private.pem";
+const PUBLIC_KEY_PATH: &str = "public.pem";
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
 
-    let id_generator = Arc::new(Mutex::new(SnowflakeIdGenerator::new(1, 1)));
+    let (public_key, private_key) =
+        if Path::new(PRIVATE_KEY_PATH).exists() && Path::new(PUBLIC_KEY_PATH).exists() {
+            info!("Loading existing authorization keys");
+            (
+                tokio::fs::read(PUBLIC_KEY_PATH).await.unwrap(),
+                tokio::fs::read(PRIVATE_KEY_PATH).await.unwrap(),
+            )
+        } else {
+            info!("Generating new authorization keys");
+            let key = PKey::generate_ed25519().unwrap();
+            let private_key = key.private_key_to_pem_pkcs8().unwrap();
+            tokio::fs::write(PRIVATE_KEY_PATH, private_key.clone())
+                .await
+                .unwrap();
+            let public_key = key.public_key_to_pem().unwrap();
+            tokio::fs::write(PUBLIC_KEY_PATH, public_key.clone())
+                .await
+                .unwrap();
+            (private_key, public_key)
+        };
 
-    let db_url = std::env::var("DATABASE_URL").unwrap_or("sfls.db".to_string());
-    let connection = Arc::new(Mutex::new(SqliteConnection::establish(&db_url).unwrap()));
-    connection.lock().await.batch_execute("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;").unwrap();
+    info!("Connecting to database");
+    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
+    let pool = Pool::builder(manager).build().unwrap();
 
-    let library_repository = LibraryRepository::new(id_generator.clone());
-    let media_repository = MediaRepository::new(id_generator.clone());
+    info!("Starting job queue");
+    let (tx, mut rx) = mpsc::unbounded_channel::<Box<dyn Job + Send + Sync>>();
+    tokio::spawn(async move {
+        let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
 
-    let repositories = Arc::new(Repositories {
-        library_repository: Box::new(library_repository),
-        media_repository: Box::new(media_repository),
+        while let Some(job) = rx.recv().await {
+            let semaphore = semaphore.clone();
+
+            tokio::spawn(async move {
+                let _permit = match semaphore.acquire().await {
+                    Ok(p) => p,
+                    Err(_e) => {
+                        tracing::error!("Failed to acquire semaphore");
+                        return;
+                    }
+                };
+
+                if let Err(e) = job.run().await {
+                    tracing::error!("Failed to run job: {}", e);
+                }
+            });
+        }
     });
 
-    let queue_database_url = std::env::var("QUEUE_DATABASE_URL").unwrap_or("queue.db".to_string());
-    let queue = Arc::new(Queue::new(&PathBuf::from(queue_database_url)).await.unwrap());
-    let scan_library = JobRunner::builder("scan_library", scan_library_job).build();
-    let scan_folder = JobRunner::builder("scan_folder", scan_folder_job).build();
-    let queue_context = Arc::new(JobContext {
-        connection: connection.clone(),
-        repositories: repositories.clone(),
-        queue: queue.clone(),
-        scanner_factory: ScannerFactory::new(),
-    });
-    let _worker = Worker::builder(&queue.clone(), queue_context)
-        .max_concurrency(10)
-        .jobs([scan_library, scan_folder])
-        .build()
-        .await
-        .unwrap();
+    let state = AppState {
+        public_key,
+        private_key,
+        pool,
+        queue: tx,
+        artwork_fetcher_factory: Arc::new(ArtworkFetcherFactory::default()),
+        scanner_factory: Arc::new(ScannerFactory::default()),
+    };
 
-    let host = std::env::var("SERVER_HOST").unwrap_or("127.0.0.1".to_string());
+    info!("Starting server");
+    let app = Router::new()
+        .merge(routes::routes())
+        .with_state(state)
+        .layer(TraceLayer::new_for_http());
+
+    let host = std::env::var("SERVER_HOST").unwrap_or("0.0.0.0".to_string());
     let port = std::env::var("SERVER_PORT").unwrap_or("8080".to_string());
-    let app = openapi::server::new(OpenAPIImpl {
-        connection: connection.clone(),
-        repositories: repositories.clone(),
-        queue: queue.clone(),
-    });
+    info!("Listening on {}:{}", host, port);
     let listener = TcpListener::bind((host, port.parse().unwrap()))
         .await
         .unwrap();

@@ -1,24 +1,24 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
-pub struct NFO {
+pub struct Nfo {
     pub title: String,
-    #[serde(rename="originaltitle")]
+    #[serde(rename = "originaltitle")]
     pub original_title: Option<String>,
-    #[serde(rename="sorttitle")]
+    #[serde(rename = "sorttitle")]
     pub sort_title: Option<String>,
     pub season: Option<i32>,
     pub episode: Option<i32>,
     pub ratings: Option<Ratings>,
     pub rating: Option<f64>,
-    #[serde(rename="criticrating")]
+    #[serde(rename = "criticrating")]
     pub critic_rating: Option<i32>,
-    #[serde(rename="userrating")]
+    #[serde(rename = "userrating")]
     pub user_rating: Option<i32>,
-    #[serde(rename="top250")]
+    #[serde(rename = "top250")]
     pub top_250: Option<i32>,
     pub outline: Option<String>,
-    pub plot: String,
+    pub plot: Option<String>,
     pub tagline: Option<String>,
     pub runtime: Option<i32>,
     pub thumb: Option<Thumb>,
@@ -36,7 +36,7 @@ pub struct NFO {
     pub studio: Option<String>,
     pub trailer: Option<String>,
     #[serde(rename = "fileinfo")]
-    pub file_info: Option<FileInfo>
+    pub file_info: Option<FileInfo>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -75,7 +75,7 @@ pub struct Fanart {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileInfo {
     #[serde(rename = "streamdetails")]
-    pub stream_details: StreamDetails
+    pub stream_details: StreamDetails,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,10 +106,10 @@ pub struct Audio {
     pub bitrate: String,
     pub channels: String,
     pub codec: String,
-    pub language: String,
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Subtitle {
-    pub language: String,
+    pub language: Option<String>,
 }

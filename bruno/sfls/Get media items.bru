@@ -1,0 +1,16 @@
+meta {
+  name: Get media items
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:8080/media?types=movie&orderBy=Random
+  body: none
+  auth: inherit
+}
+
+params:query {
+  types: movie
+  orderBy: Random
+}
