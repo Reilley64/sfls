@@ -1,9 +1,17 @@
 use crate::models::{InsertableMedia, Media};
 use crate::schema::media;
+use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::sql_types::BigInt;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
+use serde::Deserialize;
 use tracing::debug;
+
+#[derive(Debug, Clone, Deserialize)]
+pub enum MediaCriteriaOrder {
+    Title,
+    Random,
+}
 
 #[derive(Debug, Default)]
 pub struct MediaCriteria {
@@ -11,6 +19,7 @@ pub struct MediaCriteria {
     pub title: Option<String>,
     pub library_id: Option<i64>,
     pub parent_id: Option<i64>,
+    pub order_by: Option<MediaCriteriaOrder>,
 }
 
 pub async fn find_by_id(connection: &mut AsyncPgConnection, id: i64) -> QueryResult<Option<Media>> {
@@ -94,7 +103,16 @@ pub async fn find_all(
         }
     }
 
-    query = query.order(media::title);
+    if let Some(order_by) = criteria.order_by {
+        match order_by {
+            MediaCriteriaOrder::Title => {
+                query = query.order(media::title);
+            }
+            MediaCriteriaOrder::Random => {
+                query = query.order(sql::<diesel::sql_types::Text>("random()"));
+            }
+        }
+    }
 
     query.select(Media::as_select()).load(connection).await
 }
@@ -109,7 +127,7 @@ pub async fn find_continue_watching(
             FROM history h
             INNER JOIN media m ON h.media_id = m.id
             WHERE h.user_id = $1
-            AND h.position < m.video_file_size * 0.9
+            -- AND h.position < m.video_file_size * 0.9
         ),
         watched_episodes AS (
             SELECT DISTINCT ON(m.parent_id) m.parent_id, m.season, m.episode
@@ -117,7 +135,7 @@ pub async fn find_continue_watching(
             INNER JOIN media m ON h.media_id = m.id
             WHERE h.user_id = $1
             AND m.type = 'tvshow'
-            AND h.position >= m.video_file_size * 0.9
+            -- AND h.position >= m.video_file_size * 0.9
             ORDER BY m.parent_id, m.created_at DESC
         ),
         next_episodes AS (
@@ -131,16 +149,10 @@ pub async fn find_continue_watching(
                m.updated_at,
                m.type AS type_,
                m.path,
-               m.video_file,
-               m.video_file_size,
-               m.poster_file,
-               m.thumbnail_file,
-               m.fanart_file,
-               m.logo_file,
-               m.banner_file,
                m.title,
                m.season,
                m.episode,
+               m.files,
                m.attributes,
                m.parent_id,
                m.library_id

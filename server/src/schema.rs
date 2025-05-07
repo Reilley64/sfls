@@ -30,18 +30,13 @@ diesel::table! {
         created_at -> Timestamp,
         updated_at -> Timestamp,
         #[sql_name = "type"]
-        type_ -> Text,
+        #[max_length = 255]
+        type_ -> Varchar,
         path -> Nullable<Text>,
-        video_file -> Nullable<Text>,
-        video_file_size -> Nullable<Int8>,
-        poster_file -> Nullable<Text>,
-        thumbnail_file -> Nullable<Text>,
-        fanart_file -> Nullable<Text>,
-        logo_file -> Nullable<Text>,
-        banner_file -> Nullable<Text>,
         title -> Text,
         season -> Nullable<Int4>,
         episode -> Nullable<Int4>,
+        files -> Jsonb,
         attributes -> Jsonb,
         parent_id -> Nullable<Int8>,
         library_id -> Int8,
@@ -69,4 +64,9 @@ diesel::joinable!(history -> media (media_id));
 diesel::joinable!(history -> users (user_id));
 diesel::joinable!(media -> libraries (library_id));
 
-diesel::allow_tables_to_appear_in_same_query!(history, libraries, media, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    history,
+    libraries,
+    media,
+    users,
+);

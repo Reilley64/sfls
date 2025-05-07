@@ -11,8 +11,7 @@ pub type DbPool = Pool<AsyncDieselConnectionManager<AsyncPgConnection>>;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub public_key: Vec<u8>,
-    pub private_key: Vec<u8>,
+    pub secret: Vec<u8>,
     pub pool: DbPool,
     pub queue: UnboundedSender<Box<dyn Job + Send + Sync>>,
     pub artwork_fetcher_factory: Arc<ArtworkFetcherFactory>,

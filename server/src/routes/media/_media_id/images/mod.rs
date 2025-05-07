@@ -1,9 +1,8 @@
-mod index;
-
 use crate::state::AppState;
-use axum::routing::get;
 use axum::Router;
 
+mod _file_type;
+
 pub fn routes() -> Router<AppState> {
-    Router::new().route("/", get(index::get))
+    Router::new().nest("/{file_type}", _file_type::routes())
 }

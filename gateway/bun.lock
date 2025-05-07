@@ -7,10 +7,10 @@
         "@trpc/server": "^11.1.2",
         "neverthrow": "^8.2.0",
         "prettier": "^3.5.3",
-        "zod": "^3.24.3",
+        "zod": "^3.24.4",
       },
       "devDependencies": {
-        "@types/bun": "latest",
+        "@types/bun": "^1.2.11",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -36,6 +36,6 @@
 
     "undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
-    "zod": ["zod@3.24.3", "", {}, "sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg=="],
+    "zod": ["zod@3.24.4", "", {}, "sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg=="],
   }
 }

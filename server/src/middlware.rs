@@ -7,7 +7,7 @@ use axum::http::request::Parts;
 use deadpool::managed::Object;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
-use jsonwebtoken::{Algorithm, DecodingKey, Validation};
+use jsonwebtoken::{DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
@@ -84,11 +84,8 @@ where
 
         let claims = jsonwebtoken::decode::<Claims>(
             parts[1],
-            &DecodingKey::from_ed_pem(&state.public_key).map_err(|e| {
-                error!("Error decoding public key: {}", e);
-                Problem::from(ProblemType::InternalServerError(None))
-            })?,
-            &Validation::new(Algorithm::EdDSA),
+            &DecodingKey::from_secret(&state.secret),
+            &Validation::default(),
         )
         .map_err(|e| {
             error!("Error decoding token: {}", e);

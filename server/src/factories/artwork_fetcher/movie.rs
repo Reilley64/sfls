@@ -1,8 +1,10 @@
 use crate::clients::fanart::FanartService;
 use crate::factories::artwork_fetcher::{convert_and_save_image_as_webp, ArtworkFetcher};
+use crate::models::{File, FileType};
 use crate::repositories;
 use crate::state::AppState;
 use async_trait::async_trait;
+use itertools::Itertools;
 use std::path::Path;
 use tracing::{info, warn};
 
@@ -36,102 +38,63 @@ impl ArtworkFetcher for MovieArtworkFetcher {
             return Err(anyhow::Error::msg("Media path not set".to_string()));
         }
 
-        if media.poster_file.is_none() {
-            let mut posters: Vec<_> = response
-                .movie_poster
-                .into_iter()
-                .filter(|p| p.lang == "en")
-                .collect();
-            posters.sort_by(|a, b| b.likes.cmp(&a.likes));
+        let file_types = vec![
+            FileType::Poster,
+            FileType::Logo,
+            FileType::Background,
+            FileType::Thumbnail,
+        ];
 
-            match posters.first() {
-                Some(poster) => {
+        for file_type in file_types {
+            if media.files.iter().any(|f| f.type_ == file_type) {
+                continue;
+            }
+
+            let images: Vec<_> = match file_type {
+                FileType::Poster => response.movie_poster.clone(),
+                FileType::Logo => response.hdmovie_logo.clone(),
+                FileType::Thumbnail => response.movie_thumb.clone(),
+                FileType::Background => response.movie_background.clone(),
+                _ => unreachable!(),
+            }
+            .into_iter()
+            .filter(|t| file_type == FileType::Background || t.lang == "en")
+            .sorted_by(|a, b| b.likes.cmp(&a.likes))
+            .collect();
+
+            match images.first() {
+                Some(image) => {
                     let response = reqwest::Client::new()
-                        .get(&poster.url)
+                        .get(&image.url)
                         .send()
                         .await
-                        .map_err(|e| anyhow::Error::msg(format!("Failed to download poster: {e}")))?
+                        .map_err(|e| anyhow::Error::msg(format!("Failed to download images: {e}")))?
                         .bytes()
                         .await
                         .map_err(|e| {
                             anyhow::Error::msg(format!("Failed to fetch poster bytes: {e}"))
                         })?;
 
-                    let file_name = "poster.webp";
+                    let file_name = match file_type {
+                        FileType::Poster => "poster.webp",
+                        FileType::Logo => "logo.webp",
+                        FileType::Thumbnail => "thumbnail.webp",
+                        FileType::Background => "background.webp",
+                        _ => unreachable!(),
+                    };
                     convert_and_save_image_as_webp(
                         response,
                         &Path::new(&media.path.clone().unwrap()).join(file_name),
                     )?;
-                    media.poster_file = Some(file_name.to_string());
+                    media.files.as_mut().push(File {
+                        type_: file_type,
+                        path: file_name.to_string(),
+                        blur_hash: None,
+                    });
                 }
                 None => {
-                    warn!("No poster found for Media {}", media_id);
-                }
-            }
-        }
-
-        if media.thumbnail_file.is_none() {
-            let mut thumbnails: Vec<_> = response
-                .movie_thumb
-                .into_iter()
-                .filter(|t| t.lang == "en")
-                .collect();
-            thumbnails.sort_by(|a, b| b.likes.cmp(&a.likes));
-
-            match thumbnails.first() {
-                Some(thumbnail) => {
-                    let response = reqwest::Client::new()
-                        .get(&thumbnail.url)
-                        .send()
-                        .await
-                        .map_err(|e| {
-                            anyhow::Error::msg(format!("Failed to download thumbnail: {e}"))
-                        })?
-                        .bytes()
-                        .await
-                        .map_err(|e| {
-                            anyhow::Error::msg(format!("Failed to fetch thumbnail bytes: {e}"))
-                        })?;
-
-                    let file_name = "thumbnail.webp";
-                    convert_and_save_image_as_webp(
-                        response,
-                        &Path::new(&media.path.clone().unwrap()).join(file_name),
-                    )?;
-                    media.thumbnail_file = Some(file_name.to_string());
-                }
-                None => {
-                    warn!("No thumbnail found for Media {}", media_id);
-                }
-            }
-        }
-
-        if media.fanart_file.is_none() {
-            let mut fanarts: Vec<_> = response.movie_background;
-            fanarts.sort_by(|a, b| b.likes.cmp(&a.likes));
-
-            match fanarts.first() {
-                Some(fanart) => {
-                    let response = reqwest::Client::new()
-                        .get(&fanart.url)
-                        .send()
-                        .await
-                        .map_err(|e| anyhow::Error::msg(format!("Failed to download fanart: {e}")))?
-                        .bytes()
-                        .await
-                        .map_err(|e| {
-                            anyhow::Error::msg(format!("Failed to fetch fanart bytes: {e}"))
-                        })?;
-
-                    let file_name = "fanart.webp";
-                    convert_and_save_image_as_webp(
-                        response,
-                        &Path::new(&media.path.clone().unwrap()).join(file_name),
-                    )?;
-                    media.fanart_file = Some(file_name.to_string());
-                }
-                None => {
-                    warn!("No fanart found for Media {}", media_id);
+                    warn!("No {:?} found for Media {}", file_type, media_id);
+                    continue;
                 }
             }
         }

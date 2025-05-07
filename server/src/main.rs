@@ -6,8 +6,7 @@ use axum::Router;
 use diesel_async::pooled_connection::deadpool::Pool;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
-use openssl::pkey::PKey;
-use std::path::Path;
+use rand::Rng;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::{mpsc, Semaphore};
@@ -28,8 +27,8 @@ mod schema;
 mod state;
 mod views;
 
-const PRIVATE_KEY_PATH: &str = "private.pem";
-const PUBLIC_KEY_PATH: &str = "public.pem";
+const MIGRATIONS: diesel_async_migrations::EmbeddedMigrations =
+    diesel_async_migrations::embed_migrations!();
 
 #[tokio::main]
 async fn main() {
@@ -38,31 +37,23 @@ async fn main() {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    let (public_key, private_key) =
-        if Path::new(PRIVATE_KEY_PATH).exists() && Path::new(PUBLIC_KEY_PATH).exists() {
-            info!("Loading existing authorization keys");
-            (
-                tokio::fs::read(PUBLIC_KEY_PATH).await.unwrap(),
-                tokio::fs::read(PRIVATE_KEY_PATH).await.unwrap(),
-            )
-        } else {
-            info!("Generating new authorization keys");
-            let key = PKey::generate_ed25519().unwrap();
-            let private_key = key.private_key_to_pem_pkcs8().unwrap();
-            tokio::fs::write(PRIVATE_KEY_PATH, private_key.clone())
-                .await
-                .unwrap();
-            let public_key = key.public_key_to_pem().unwrap();
-            tokio::fs::write(PUBLIC_KEY_PATH, public_key.clone())
-                .await
-                .unwrap();
-            (private_key, public_key)
-        };
+    info!("Generating new authorization secret");
+    let mut secret = vec![0u8; 32];
+    rand::rng().fill(&mut secret[..]);
 
     info!("Connecting to database");
     let db_url = std::env::var("DATABASE_URL").unwrap();
     let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
     let pool = Pool::builder(manager).build().unwrap();
+
+    info!("Running pending migrations");
+    {
+        let mut connection = pool.get().await.unwrap();
+        MIGRATIONS
+            .run_pending_migrations(&mut connection)
+            .await
+            .unwrap();
+    }
 
     info!("Starting job queue");
     let (tx, mut rx) = mpsc::unbounded_channel::<Box<dyn Job + Send + Sync>>();
@@ -89,8 +80,7 @@ async fn main() {
     });
 
     let state = AppState {
-        public_key,
-        private_key,
+        secret,
         pool,
         queue: tx,
         artwork_fetcher_factory: Arc::new(ArtworkFetcherFactory::default()),

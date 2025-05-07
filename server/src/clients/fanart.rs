@@ -60,7 +60,7 @@ pub struct FanartTVResponse {
     pub season_banner: Vec<FanartImage>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FanartImage {
     pub id: String,
     pub url: String,

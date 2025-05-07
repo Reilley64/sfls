@@ -1,6 +1,6 @@
 use crate::factories::library_scanner::{remove_empty_self_closing_tags, LibraryScanner};
 use crate::jobs::fetch_artwork::{FetchArtwork, FetchArtworkPayload};
-use crate::models::{InsertableMedia, Library};
+use crate::models::{File, FileType, InsertableMedia, Library};
 use crate::nfo::Nfo;
 use crate::repositories;
 use crate::state::AppState;
@@ -21,19 +21,21 @@ impl LibraryScanner for MovieScanner {
     ) -> Result<(), anyhow::Error> {
         let mut dir = fs::read_dir(folder_path).await?;
 
-        let (video_file, nfo_file, poster_file, thumbnail_file, fanart_file) = {
+        let (video_file, nfo_file, poster_file, logo_file, background_file, thumbnail_file) = {
             let mut video_file = None;
             let mut nfo_file = None;
             let mut poster_file = false;
+            let mut logo_file = false;
+            let mut background_file = false;
             let mut thumbnail_file = false;
-            let mut fanart_file = false;
 
             while let Some(entry) = dir.next_entry().await? {
                 if video_file.is_some()
                     && nfo_file.is_some()
                     && poster_file
+                    && logo_file
+                    && background_file
                     && thumbnail_file
-                    && fanart_file
                 {
                     break;
                 }
@@ -65,28 +67,28 @@ impl LibraryScanner for MovieScanner {
                     }
                 }
 
-                if !poster_file {
+                if !poster_file || !logo_file || !background_file || !thumbnail_file {
                     if let Some(file_name) = path.file_name() {
-                        if file_name == "poster.webp" {
-                            poster_file = true;
-                            continue;
-                        }
-                    }
-                }
-
-                if !thumbnail_file {
-                    if let Some(file_name) = path.file_name() {
-                        if file_name == "thumbnail.webp" {
-                            thumbnail_file = true;
-                            continue;
-                        }
-                    }
-                }
-
-                if !fanart_file {
-                    if let Some(file_name) = path.file_name() {
-                        if file_name == "fanart.webp" {
-                            fanart_file = true;
+                        match file_name.to_str().unwrap() {
+                            "poster.webp" => {
+                                poster_file = true;
+                                continue;
+                            }
+                            "logo.webp" => {
+                                logo_file = true;
+                                continue;
+                            }
+                            "background.webp" => {
+                                background_file = true;
+                                continue;
+                            }
+                            "thumbnail.webp" => {
+                                thumbnail_file = true;
+                                continue;
+                            }
+                            _ => {
+                                continue;
+                            }
                         }
                     }
                 }
@@ -96,21 +98,22 @@ impl LibraryScanner for MovieScanner {
                 video_file,
                 nfo_file,
                 poster_file,
+                logo_file,
+                background_file,
                 thumbnail_file,
-                fanart_file,
             )
         };
-        
+
         let Some(video_file) = video_file else {
             return Err(anyhow::Error::msg(
                 "No video file found in folder".to_string(),
             ));
         };
-        
+
         let Some(nfo_file) = nfo_file else {
             return Err(anyhow::Error::msg(
                 "No nfo file found in folder".to_string(),
-            ));       
+            ));
         };
 
         let nfo_string =
@@ -121,35 +124,44 @@ impl LibraryScanner for MovieScanner {
         media.type_.clone_from(&library.media_type);
         media.library_id = library.id;
         media.path = Some(folder_path.to_str().unwrap().to_string());
-        media.video_file = Some(
-            video_file
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
-        );
-        media.video_file_size = Some(
-            tokio::fs::metadata(&video_file)
-                .await
-                .map_err(|_e| anyhow::Error::msg("Error getting file size".to_string()))?
-                .len() as i64,
-        );
-        media.poster_file = if poster_file {
-            Some("poster.webp".to_string())
-        } else {
-            None
-        };
-        media.thumbnail_file = if thumbnail_file {
-            Some("thumbnail.webp".to_string())
-        } else {
-            None
-        };
-        media.fanart_file = if fanart_file {
-            Some("fanart.webp".to_string())
-        } else {
-            None
-        };
+
+        media.files.as_mut().push(File {
+            type_: FileType::Video,
+            path: video_file.file_name().unwrap().to_str().unwrap().to_string(),
+            blur_hash: None,
+        });
+
+        if poster_file {
+            media.files.as_mut().push(File {
+                type_: FileType::Poster,
+                path: "poster.webp".to_string(),
+                blur_hash: None,
+            });
+        }
+
+        if logo_file {
+            media.files.as_mut().push(File {
+                type_: FileType::Logo,
+                path: "logo.webp".to_string(),
+                blur_hash: None,
+            });
+        }
+
+        if background_file {
+            media.files.as_mut().push(File {
+                type_: FileType::Background,
+                path: "background.webp".to_string(),
+                blur_hash: None,
+            });
+        }
+
+        if thumbnail_file {
+            media.files.as_mut().push(File {
+                type_: FileType::Thumbnail,
+                path: "thumbnail.webp".to_string(),
+                blur_hash: None,
+            });
+        }
 
         let media = {
             let mut connection = state.pool.get().await?;

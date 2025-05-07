@@ -1,6 +1,7 @@
 use crate::nfo::Nfo;
 use diesel::{AsChangeset, Insertable, Queryable, QueryableByName, Selectable};
-use serde::Serialize;
+use diesel_json::Json;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 #[derive(Debug, Default, Serialize, Queryable, Selectable, Insertable)]
@@ -28,20 +29,32 @@ pub struct Library {
     pub media_type: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum FileType {
+    Video,
+    Poster,
+    Logo,
+    Thumbnail,
+    Background,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct File {
+    pub type_: FileType,
+    pub path: String,
+    pub blur_hash: Option<String>,
+}
+
 #[derive(Debug, Default, Insertable)]
 #[diesel(table_name = crate::schema::media)]
 pub struct InsertableMedia {
     pub type_: String,
     pub library_id: i64,
     pub path: Option<String>,
-    pub video_file: Option<String>,
-    pub video_file_size: Option<i64>,
-    pub poster_file: Option<String>,
-    pub thumbnail_file: Option<String>,
-    pub fanart_file: Option<String>,
     pub title: String,
     pub season: Option<i32>,
     pub episode: Option<i32>,
+    pub files: Json<Vec<File>>,
     pub attributes: serde_json::Value,
     pub parent_id: Option<i64>,
 }
@@ -91,14 +104,10 @@ pub struct Media {
     pub type_: String,
     pub library_id: i64,
     pub path: Option<String>,
-    pub video_file: Option<String>,
-    pub video_file_size: Option<i64>,
-    pub poster_file: Option<String>,
-    pub thumbnail_file: Option<String>,
-    pub fanart_file: Option<String>,
     pub title: String,
     pub season: Option<i32>,
     pub episode: Option<i32>,
+    pub files: Json<Vec<File>>,
     pub attributes: serde_json::Value,
     pub parent_id: Option<i64>,
 }
@@ -108,12 +117,10 @@ impl Media {
         self.type_.clone_from(&insertable.type_);
         self.library_id = insertable.library_id;
         self.path.clone_from(&insertable.path);
-        self.video_file.clone_from(&insertable.video_file);
-        self.thumbnail_file.clone_from(&insertable.thumbnail_file);
-        self.fanart_file.clone_from(&insertable.fanart_file);
         self.title.clone_from(&insertable.title);
         self.season = insertable.season;
         self.episode = insertable.episode;
+        self.files = insertable.files.clone();
         self.attributes = insertable.attributes.clone();
         self.parent_id = insertable.parent_id;
     }

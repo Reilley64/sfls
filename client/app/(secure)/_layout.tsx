@@ -5,7 +5,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { GalleryVerticalEnd } from "lucide-react-native";
 import { cssInterop } from "nativewind";
 
@@ -67,7 +67,8 @@ export default function SecureLayout() {
                     </Text>
                     <TextInput
                       id={field.name}
-                      className="flex h-9 w-full animate-none rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground transition-none file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:border-white disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      autoCapitalize="none"
+                      className="flex h-11 w-full animate-none rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground transition-none file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:border-white disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                       hasTVPreferredFocus
                       keyboardType="email-address"
                       onBlur={field.handleBlur}
@@ -88,7 +89,8 @@ export default function SecureLayout() {
                     </Text>
                     <TextInput
                       id={field.name}
-                      className="flex h-9 w-full animate-none rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground transition-none file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:border-white disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      autoCapitalize="none"
+                      className="flex h-11 w-full animate-none rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground transition-none file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:border-white disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                       hasTVPreferredFocus
                       onBlur={field.handleBlur}
                       onChangeText={(value) => field.handleChange(value)}
@@ -99,8 +101,8 @@ export default function SecureLayout() {
                 )}
               />
 
-              <Button onPress={form.handleSubmit}>
-                <Text className="text-xs font-medium">Login</Text>
+              <Button onPress={form.handleSubmit} size="lg">
+                <Text className="font-medium">Login</Text>
               </Button>
             </View>
           </View>
@@ -109,5 +111,12 @@ export default function SecureLayout() {
     );
   }
 
-  return <Slot />;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "none",
+      }}
+    />
+  );
 }

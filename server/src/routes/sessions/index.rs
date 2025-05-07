@@ -6,7 +6,7 @@ use axum::extract::State;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::Utc;
-use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use jsonwebtoken::{EncodingKey, Header};
 use password_auth::{verify_password, VerifyError};
 use serde::{Deserialize, Serialize};
 use tracing::error;
@@ -68,12 +68,9 @@ pub async fn post(
     };
 
     let token = jsonwebtoken::encode(
-        &Header::new(Algorithm::EdDSA),
+        &Header::default(),
         &claims,
-        &EncodingKey::from_ed_pem(&state.private_key).map_err(|e| {
-            error!("Error decoding private key: {}", e);
-            Problem::from(ProblemType::InternalServerError(instance.clone()))
-        })?,
+        &EncodingKey::from_secret(&state.secret),
     )
     .map_err(|e| {
         error!("Error encoding token: {}", e);

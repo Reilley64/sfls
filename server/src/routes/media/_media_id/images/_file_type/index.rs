@@ -1,5 +1,6 @@
 use crate::errors::{Problem, ProblemType};
 use crate::middlware::DbConn;
+use crate::models::FileType;
 use crate::repositories;
 use axum::body::Body;
 use axum::extract::Path;
@@ -13,6 +14,7 @@ use tracing::error;
 pub async fn get(
     DbConn(mut connection): DbConn,
     Path(media_id): Path<String>,
+    Path(file_type): Path<FileType>,
 ) -> Result<impl IntoResponse, Problem> {
     let instance = Some(format!("/media/{media_id}/fanart"));
 
@@ -40,18 +42,20 @@ pub async fn get(
             instance: instance.clone(),
         })?;
 
-    if media.fanart_file.is_none() {
-        return Err(Problem {
+    let image = media
+        .files
+        .iter()
+        .find(|f| f.type_ == file_type)
+        .ok_or(Problem {
             r#type: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/500"
                 .to_string(),
-            title: "Fanart not found".to_string(),
+            title: format!("{:?} not found", file_type),
             status: 404,
             detail: Some(format!("Fanart for Media with id {media_id} not found")),
-            instance,
-        });
-    }
+            instance: instance.clone(),
+        })?;
 
-    let mut components = vec![media.fanart_file, media.path];
+    let mut components = vec![Some(image.path.clone()), media.path];
     while let Some(parent_id) = media.parent_id {
         media = repositories::media::find_by_id(&mut connection, parent_id)
             .await
@@ -89,7 +93,7 @@ pub async fn get(
     let stream = ReaderStream::new(file);
 
     let mut response_headers = HeaderMap::new();
-    response_headers.insert(header::CONTENT_TYPE, "image/webp".parse().unwrap());
+    response_headers.insert(header::CONTENT_TYPE, "images/webp".parse().unwrap());
 
     Ok((StatusCode::OK, response_headers, Body::from_stream(stream)))
 }

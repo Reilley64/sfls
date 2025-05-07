@@ -41,6 +41,7 @@
     "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-error-boundary": "^6.0.0",
     "react-native": "npm:react-native-tvos@0.79.2-0",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-keyboard-controller": "^1.17.1",

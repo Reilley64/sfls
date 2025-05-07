@@ -1,6 +1,6 @@
 use crate::factories::library_scanner::remove_empty_self_closing_tags;
 use crate::jobs::Job;
-use crate::models::InsertableMedia;
+use crate::models::{File, FileType, InsertableMedia};
 use crate::nfo::Nfo;
 use crate::repositories;
 use crate::state::AppState;
@@ -71,7 +71,6 @@ impl Job for ScanSeasonFolder {
             type_: parent.type_.clone(),
             library_id: parent.library_id,
             path: Some(season_file_name.to_string()),
-            thumbnail_file: parent.thumbnail_file.clone(), //TODO: get real season thumbnail
             title: season_file_name.to_string(),
             season: Some(season),
             parent_id: Some(parent.id),
@@ -199,29 +198,19 @@ impl Job for ScanSeasonFolder {
             let mut media = InsertableMedia::from(nfo);
             media.type_.clone_from(&parent.type_);
             media.library_id = parent.library_id;
-            media.video_file = Some(
-                video_file
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            );
-            media.video_file_size = Some(
-                tokio::fs::metadata(&video_file)
-                    .await
-                    .map_err(|_e| anyhow::Error::msg("Error getting file size".to_string()))?
-                    .len() as i64,
-            );
-            media.thumbnail_file = Some(
-                thumbnail_file
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            );
             media.parent_id = Some(parent.id);
+
+            media.files.as_mut().push(File {
+                type_: FileType::Video,
+                path: video_file.to_str().unwrap().to_string(),
+                blur_hash: None,
+            });
+
+            media.files.as_mut().push(File {
+                type_: FileType::Poster,
+                path: thumbnail_file.to_str().unwrap().to_string(),
+                blur_hash: None,
+            });
 
             {
                 let mut connection = self.state.pool.get().await?;

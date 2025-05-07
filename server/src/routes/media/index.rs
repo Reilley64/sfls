@@ -1,7 +1,7 @@
 use crate::errors::{Problem, ProblemType};
 use crate::middlware::DbConn;
 use crate::repositories;
-use crate::repositories::media::MediaCriteria;
+use crate::repositories::media::{MediaCriteria, MediaCriteriaOrder};
 use crate::views::MediaView;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -16,6 +16,7 @@ pub struct QueryParams {
     title: Option<String>,
     library_id: Option<String>,
     parent_id: Option<String>,
+    order_by: Option<MediaCriteriaOrder>,
 }
 
 pub async fn get(
@@ -62,6 +63,7 @@ pub async fn get(
                         )),
                         instance: instance.clone(),
                     })?,
+                order_by: query_params.order_by.clone(),
             },
         )
         .await

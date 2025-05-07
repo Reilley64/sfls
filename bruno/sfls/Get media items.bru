@@ -5,12 +5,16 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/media?types=movie&orderBy=Random
+  url: http://localhost:10000/media?types=movie&orderBy=Random
   body: none
-  auth: inherit
+  auth: bearer
 }
 
 params:query {
   types: movie
   orderBy: Random
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjMxMDQ0MTY2MDMxNDAzMDA4MCwiZXhwIjoxNzQ2NjM1NTYyLCJpYXQiOjE3NDY1NDkxNjJ9.NnIxoI9J2kk9EjnX3_MJGuGpicMCvgfMHBpPsMrnW2w
 }

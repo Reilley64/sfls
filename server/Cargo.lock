@@ -524,6 +524,7 @@ dependencies = [
  "chrono",
  "diesel_derives",
  "itoa",
+ "pq-sys",
  "serde_json",
 ]
 
@@ -543,6 +544,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "diesel_async_migrations"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b99915cbb9455e8fd56f12edc58f92bbdf8161e4363cb2000cf4308aa6358ff4"
+dependencies = [
+ "diesel",
+ "diesel-async",
+ "diesel_async_migrations_macros",
+ "scoped-futures",
+ "tracing",
+]
+
+[[package]]
+name = "diesel_async_migrations_macros"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05de210f31e6ac18162501b03c37f839af9f9fd6dd6de2bb4031ae6691c47679"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
 name = "diesel_derives"
 version = "2.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -553,6 +577,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "diesel_json"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fc50de1d729b55dfbb03e2d2db846684e3ab585f4ee9cfc3c675d236f951888"
+dependencies = [
+ "diesel",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1248,6 +1283,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1775,6 +1819,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pq-sys"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41c852911b98f5981956037b2ca976660612e548986c30af075e753107bc3400"
+dependencies = [
+ "libc",
+ "vcpkg",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1915,7 +1969,7 @@ dependencies = [
  "built",
  "cfg-if",
  "interpolate_name",
- "itertools",
+ "itertools 0.12.1",
  "libc",
  "libfuzzer-sys",
  "log",
@@ -2282,7 +2336,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "server"
+name = "sfls"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2293,14 +2347,17 @@ dependencies = [
  "deadpool",
  "diesel",
  "diesel-async",
+ "diesel_async_migrations",
+ "diesel_json",
  "dotenvy",
  "image",
  "infer",
+ "itertools 0.14.0",
  "jsonwebtoken",
  "num_cpus",
- "openssl",
  "password-auth",
  "quick-xml",
+ "rand 0.9.1",
  "regex",
  "reqwest",
  "serde",

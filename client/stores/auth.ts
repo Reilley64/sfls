@@ -4,9 +4,9 @@ import { create } from "zustand";
 interface AuthState {
   bearerToken: string | null;
   isPending: boolean;
-  setBearerToken: (token: string) => void;
-  deleteBearerToken: () => void;
-  initialize: () => void;
+  setBearerToken: (token: string) => Promise<void>;
+  deleteBearerToken: () => Promise<void>;
+  initialize: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({

@@ -1,8 +1,9 @@
 import "~/global.css";
 
-import type { AppRouter } from "~/../gateway";
+import type { AppRouter } from "~/../gateway/src";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { configureReanimatedLogger } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -15,6 +16,10 @@ import { Slot, SplashScreen } from "expo-router";
 import { useAuthStore } from "~/stores/auth";
 
 import { TRPCProvider } from "~/lib/trpc";
+
+import { Text } from "~/components/ui/text";
+
+import { FallbackComponent } from "~/components/FallbackComponent";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +46,7 @@ export default function RootLayout() {
   const trpcClient = createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: "http://192.168.86.123:3000",
+        url: "http://192.168.86.123:10001",
         headers: () => {
           const headers = new Headers();
           if (auth.bearerToken) headers.append("Authorization", `Bearer ${auth.bearerToken}`);
@@ -60,7 +65,11 @@ export default function RootLayout() {
       <TRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
         <SafeAreaProvider>
           <KeyboardProvider>
-            <Slot />
+            <Suspense fallback={<Text>Loading....</Text>}>
+              <ErrorBoundary FallbackComponent={FallbackComponent}>
+                <Slot />
+              </ErrorBoundary>
+            </Suspense>
           </KeyboardProvider>
         </SafeAreaProvider>
       </TRPCProvider>

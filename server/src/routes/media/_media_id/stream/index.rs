@@ -1,5 +1,6 @@
 use crate::errors::{Problem, ProblemType};
 use crate::middlware::{AuthUser, DbConn};
+use crate::models::FileType;
 use crate::repositories;
 use axum::body::Body;
 use axum::extract::Path;
@@ -44,7 +45,13 @@ pub async fn get(
             instance: instance.clone(),
         })?;
 
-    if media.video_file.is_none() && media.season.is_none() {
+    if media
+        .files
+        .iter()
+        .find(|f| f.type_ == FileType::Video)
+        .is_none()
+        && media.season.is_none()
+    {
         media = repositories::media::find_by_season_and_parent_id(&mut connection, 1, media.id)
             .await
             .map_err(|e| {
@@ -67,7 +74,13 @@ pub async fn get(
             })?;
     }
 
-    if media.video_file.is_none() && media.episode.is_none() {
+    if media
+        .files
+        .iter()
+        .find(|f| f.type_ == FileType::Video)
+        .is_none()
+        && media.episode.is_none()
+    {
         media = repositories::media::find_by_episode_and_parent_id(&mut connection, 1, media.id)
             .await
             .map_err(|e| {
@@ -90,7 +103,7 @@ pub async fn get(
             })?;
     }
 
-    if media.video_file.is_none() {
+    let Some(video_file) = media.files.iter().find(|f| f.type_ == FileType::Video) else {
         return Err(Problem {
             r#type: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/404"
                 .to_string(),
@@ -99,9 +112,9 @@ pub async fn get(
             detail: Some(format!("Video for Media with id {media_id} not found")),
             instance,
         });
-    }
+    };
 
-    let mut components = vec![media.video_file, media.path];
+    let mut components = vec![Some(video_file.path.clone()), media.path];
     while let Some(parent_id) = media.parent_id {
         let media = repositories::media::find_by_id(&mut connection, parent_id)
             .await

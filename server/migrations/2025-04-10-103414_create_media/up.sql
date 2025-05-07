@@ -4,18 +4,12 @@ CREATE TABLE media
     id              BIGINT PRIMARY KEY NOT NULL DEFAULT snowflake.nextval(),
     created_at      TIMESTAMP          NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP          NOT NULL DEFAULT NOW(),
-    type            TEXT               NOT NULL,
+    type            VARCHAR(255)       NOT NULL,
     path            TEXT,
-    video_file      TEXT,
-    video_file_size BIGINT,
-    poster_file     TEXT,
-    thumbnail_file  TEXT,
-    fanart_file     TEXT,
-    logo_file       TEXT,
-    banner_file     TEXT,
     title           TEXT               NOT NULL,
     season          INTEGER,
     episode         INTEGER,
+    files JSONB NOT NULL,
     attributes      JSONB              NOT NULL
 );
 
