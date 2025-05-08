@@ -78,9 +78,24 @@ async function callService<TOutput>(endpoint: string, opts: { ctx: Context; inpu
   );
 }
 
+export const loggedProcedure = publicProcedure.use(async (opts) => {
+  const start = Date.now();
+
+  const result = await opts.next();
+
+  const durationMs = Date.now() - start;
+  const meta = { path: opts.path, type: opts.type, durationMs };
+
+  result.ok
+    ? console.log('OK request timing:', meta)
+    : console.error('Non-OK request timing', meta);
+
+  return result;
+});
+
 const appRouter = router({
   media: {
-    get: publicProcedure
+    get: loggedProcedure
       .input(
         z
           .object({
@@ -105,7 +120,7 @@ const appRouter = router({
         );
       }),
     _media_id: {
-      get: publicProcedure
+      get: loggedProcedure
         .input(
           z.object({
             params: z.object({
@@ -129,7 +144,7 @@ const appRouter = router({
         }),
       stream: {
         heartbeat: {
-          post: publicProcedure
+          post: loggedProcedure
             .input(
               z.object({
                 params: z.object({
@@ -162,7 +177,7 @@ const appRouter = router({
       },
     },
     continue: {
-      get: publicProcedure.output(z.array(mediaSchema)).query(async ({ ctx, input }) => {
+      get: loggedProcedure.output(z.array(mediaSchema)).query(async ({ ctx, input }) => {
         const result = await callService<Array<Media>>("/media/continue", { ctx, input });
         return result.match(
           (data) => data,
@@ -178,7 +193,7 @@ const appRouter = router({
     },
   },
   sessions: {
-    post: publicProcedure
+    post: loggedProcedure
       .input(z.object({ body: z.object({ email: z.string(), password: z.string() }) }))
       .output(sessionSchema)
       .mutation(async ({ ctx, input }) => {
