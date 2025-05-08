@@ -13,8 +13,7 @@ use tracing::error;
 
 pub async fn get(
     DbConn(mut connection): DbConn,
-    Path(media_id): Path<String>,
-    Path(file_type): Path<FileType>,
+    Path((media_id, file_type)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, Problem> {
     let instance = Some(format!("/media/{media_id}/fanart"));
 
@@ -24,6 +23,15 @@ pub async fn get(
         title: "media_id is not a valid id".to_string(),
         status: 400,
         detail: Some(format!("media_id {media_id} is not a valid id")),
+        instance: instance.clone(),
+    })?;
+
+    let file_type = file_type.parse::<FileType>().map_err(|_e| Problem {
+        r#type: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/400"
+            .to_string(),
+        title: "file_type is not a valid file_type".to_string(),
+        status: 400,
+        detail: Some(format!("file_type {file_type} is not a valid file_type")),
         instance: instance.clone(),
     })?;
 
