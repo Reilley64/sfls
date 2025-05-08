@@ -3,7 +3,6 @@ import { createHTTPServer } from "@trpc/server/adapters/standalone";
 import { ResultAsync } from "neverthrow";
 import { z } from "zod";
 
-import { type Context, createContext } from "./context";
 import { publicProcedure, router } from "./trpc";
 
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
@@ -28,13 +27,16 @@ const sessionSchema = z.object({ token: z.string() });
 
 type Session = z.infer<typeof sessionSchema>;
 
-type Input = {
-  params?: Record<string, string>;
-  query?: Record<string, string | string[] | undefined>;
-  body?: Record<string, unknown>;
-} | undefined;
+type Input =
+  | {
+      params?: Record<string, string>;
+      query?: Record<string, string | string[] | undefined>;
+      headers?: Record<string, string>;
+      body?: Record<string, unknown>;
+    }
+  | undefined;
 
-async function callService<TOutput>(endpoint: string, opts: { ctx: Context; input?: Input; request?: RequestInit }) {
+async function callService<TOutput>(endpoint: string, opts: { input?: Input; request?: RequestInit }) {
   let url = `${BASE_URL}${endpoint}`;
   if (opts.input?.params) {
     Object.entries(opts.input.params).forEach(([key, value]) => {
@@ -60,13 +62,14 @@ async function callService<TOutput>(endpoint: string, opts: { ctx: Context; inpu
   }
 
   if (opts?.input?.body) {
-    opts.ctx.headers.set("Content-Type", "application/json");
+    if (!opts.input.headers) opts.input.headers = {};
+    opts.input.headers["Content-Type"] = "application/json";
   }
 
   return ResultAsync.fromPromise(
     fetch(urlObj, {
       ...opts.request,
-      headers: opts.ctx.headers,
+      headers: opts.input?.headers,
       body: opts.input?.body ? JSON.stringify(opts.input.body) : undefined,
     }).then((response) => {
       if (!response.ok) {
@@ -86,9 +89,7 @@ export const loggedProcedure = publicProcedure.use(async (opts) => {
   const durationMs = Date.now() - start;
   const meta = { path: opts.path, type: opts.type, durationMs };
 
-  result.ok
-    ? console.log('OK request timing:', meta)
-    : console.error('Non-OK request timing', meta);
+  result.ok ? console.log("OK request timing:", meta) : console.error("Non-OK request timing", meta);
 
   return result;
 });
@@ -97,17 +98,16 @@ const appRouter = router({
   media: {
     get: loggedProcedure
       .input(
-        z
-          .object({
-            query: z
-              .object({ types: z.array(z.string()).optional(), orderBy: z.enum(["Title", "Random"]).optional() })
-              .optional(),
-          })
-          .optional(),
+        z.object({
+          query: z
+            .object({ types: z.array(z.string()).optional(), orderBy: z.enum(["Title", "Random"]).optional() })
+            .optional(),
+          headers: z.object({ Authorization: z.string() }),
+        }),
       )
       .output(z.array(mediaSchema))
-      .query(async ({ ctx, input }) => {
-        const result = await callService<Array<Media>>("/media", { ctx, input });
+      .query(async ({ input }) => {
+        const result = await callService<Array<Media>>("/media", { input });
         return result.match(
           (data) => data,
           (error) => {
@@ -126,11 +126,12 @@ const appRouter = router({
             params: z.object({
               mediaId: z.string(),
             }),
+            headers: z.object({ Authorization: z.string() }),
           }),
         )
         .output(mediaSchema)
-        .query(async ({ ctx, input }) => {
-          const result = await callService<Media>("/media/:mediaId", { ctx, input });
+        .query(async ({ input }) => {
+          const result = await callService<Media>("/media/:mediaId", { input });
           return result.match(
             (data) => data,
             (error) => {
@@ -150,15 +151,15 @@ const appRouter = router({
                 params: z.object({
                   mediaId: z.string(),
                 }),
+                headers: z.object({ Authorization: z.string() }),
                 body: z.object({
                   position: z.number(),
                 }),
               }),
             )
             .output(mediaSchema)
-            .mutation(async ({ ctx, input }) => {
+            .mutation(async ({ input }) => {
               const result = await callService<Media>("/media/:mediaId/stream/heartbeat", {
-                ctx,
                 input,
                 request: { method: "POST" },
               });
@@ -177,27 +178,34 @@ const appRouter = router({
       },
     },
     continue: {
-      get: loggedProcedure.output(z.array(mediaSchema)).query(async ({ ctx, input }) => {
-        const result = await callService<Array<Media>>("/media/continue", { ctx, input });
-        return result.match(
-          (data) => data,
-          (error) => {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: error.message,
-              cause: error,
-            });
-          },
-        );
-      }),
+      get: loggedProcedure
+        .input(z.object({ headers: z.object({ Authorization: z.string() }) }))
+        .output(z.array(mediaSchema))
+        .query(async ({ input }) => {
+          const result = await callService<Array<Media>>("/media/continue", { input });
+          return result.match(
+            (data) => data,
+            (error) => {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: error.message,
+                cause: error,
+              });
+            },
+          );
+        }),
     },
   },
   sessions: {
     post: loggedProcedure
-      .input(z.object({ body: z.object({ email: z.string(), password: z.string() }) }))
+      .input(
+        z.object({
+          body: z.object({ email: z.string(), password: z.string() }),
+        }),
+      )
       .output(sessionSchema)
-      .mutation(async ({ ctx, input }) => {
-        const result = await callService<Session>("/sessions", { ctx, input, request: { method: "POST" } });
+      .mutation(async ({ input }) => {
+        const result = await callService<Session>("/sessions", { input, request: { method: "POST" } });
         return result.match(
           (data) => data,
           (error) => {
@@ -214,7 +222,6 @@ const appRouter = router({
 
 const server = createHTTPServer({
   router: appRouter,
-  createContext,
 });
 
 server.listen(SERVER_PORT);
