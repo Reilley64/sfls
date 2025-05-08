@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { View } from "react-native";
 
 import { Slot } from "expo-router";
+
 import { FilmIcon, HomeIcon, SettingsIcon, TvIcon } from "lucide-react-native";
 
 import { cn } from "~/lib/utils";

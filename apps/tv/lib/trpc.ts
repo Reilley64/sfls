@@ -1,4 +1,4 @@
-import type { AppRouter } from "~/../gateway/src";
+import type { AppRouter } from "@sfls/gateway";
 
 import { inferRouterOutputs } from "@trpc/server";
 import { createTRPCContext } from "@trpc/tanstack-react-query";

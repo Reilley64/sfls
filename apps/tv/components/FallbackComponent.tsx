@@ -1,11 +1,12 @@
-import { FallbackProps } from "react-error-boundary";
+import { useEffect } from "react";
 import { SafeAreaView } from "react-native";
+
+import { FallbackProps } from "react-error-boundary";
 
 import { useAuthStore } from "~/stores/auth";
 
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
-import { useEffect } from "react";
 
 export function FallbackComponent({ error, resetErrorBoundary }: FallbackProps) {
   const auth = useAuthStore();

@@ -1,13 +1,16 @@
 import * as React from "react";
 import { ComponentRef, useRef, useState } from "react";
 import { Dimensions, FlatList, Pressable, SafeAreaView, SectionList, View } from "react-native";
-import Animated from "react-native-reanimated";
 
-import { useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+
+import { useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 import { cssInterop } from "nativewind";
+import Animated from "react-native-reanimated";
+
+import { useAuthStore } from "~/stores/auth";
 
 import { RouterOutput, useTRPC } from "~/lib/trpc";
 import { cn } from "~/lib/utils";
@@ -21,6 +24,7 @@ cssInterop(Image, {
 });
 
 export default function Home() {
+  const auth = useAuthStore();
   const queryClient = useQueryClient();
   const router = useRouter();
   const trpc = useTRPC();
@@ -29,9 +33,15 @@ export default function Home() {
 
   const [continueQuery, movieQuery, showQuery] = useSuspenseQueries({
     queries: [
-      trpc.media.continue.get.queryOptions(),
-      trpc.media.get.queryOptions({ query: { types: ["movie"], orderBy: "Random" } }),
-      trpc.media.get.queryOptions({ query: { types: ["tvshow"], orderBy: "Random" } }),
+      trpc.media.continue.get.queryOptions({ headers: { Authorization: `Bearer ${auth.bearerToken}` } }),
+      trpc.media.get.queryOptions({
+        query: { types: ["movie"], orderBy: "Random" },
+        headers: { Authorization: `Bearer ${auth.bearerToken}` },
+      }),
+      trpc.media.get.queryOptions({
+        query: { types: ["tvshow"], orderBy: "Random" },
+        headers: { Authorization: `Bearer ${auth.bearerToken}` },
+      }),
     ],
   });
 
@@ -92,7 +102,7 @@ export default function Home() {
           <Image
             cachePolicy="memory"
             className="h-full w-full object-cover"
-            source={`http://192.168.86.123:10000/media/${focusedMedia.id}/images/Background`}
+            source={`http://192.168.86.215:10000/media/${focusedMedia.id}/images/background`}
           />
           <LinearGradient
             className="absolute inset-0"
@@ -104,7 +114,7 @@ export default function Home() {
           <Image
             cachePolicy="memory"
             className="absolute bottom-0"
-            source={`http://192.168.86.123:10000/media/${focusedMedia.id}/images/Logo`}
+            source={`http://192.168.86.215:10000/media/${focusedMedia.id}/images/logo`}
             style={{ height: 99.2, width: 256 }}
           />
         </Animated.View>
@@ -146,7 +156,7 @@ export default function Home() {
                   <Image
                     className="rounded-xl"
                     key={media.id}
-                    source={`http://192.168.86.123:10000/media/${media.id}/poster`}
+                    source={`http://192.168.86.215:10000/media/${media.id}/images/poster`}
                     style={{ width: 1000 / 7, height: 1426 / 7 }}
                   />
                 </Pressable>

@@ -1,17 +1,18 @@
 import "~/global.css";
 
-import type { AppRouter } from "~/../gateway/src";
+import type { AppRouter } from "@sfls/gateway";
 
 import { Suspense, useEffect } from "react";
+
+import { useFonts } from "expo-font";
+import { Slot, SplashScreen } from "expo-router";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { ErrorBoundary } from "react-error-boundary";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { configureReanimatedLogger } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { useFonts } from "expo-font";
-import { Slot, SplashScreen } from "expo-router";
 
 import { useAuthStore } from "~/stores/auth";
 
@@ -36,7 +37,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    auth.initialize();
+    void auth.initialize();
   }, []);
 
   useEffect(() => {
@@ -46,12 +47,7 @@ export default function RootLayout() {
   const trpcClient = createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: "http://192.168.86.123:10001",
-        headers: () => {
-          const headers = new Headers();
-          if (auth.bearerToken) headers.append("Authorization", `Bearer ${auth.bearerToken}`);
-          return headers;
-        },
+        url: "http://192.168.86.215:10001",
       }),
     ],
   });

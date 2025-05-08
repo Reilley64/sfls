@@ -1,14 +1,15 @@
 import { useEffect } from "react";
 import { Dimensions, SafeAreaView } from "react-native";
 
-import { DefaultError, useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
+
+import { useMutation } from "@tanstack/react-query";
 import { cssInterop } from "nativewind";
 
 import { useAuthStore } from "~/stores/auth";
 
-import { RouterOutput, useTRPC } from "~/lib/trpc";
+import { useTRPC } from "~/lib/trpc";
 
 cssInterop(VideoView, {
   className: {
@@ -17,7 +18,7 @@ cssInterop(VideoView, {
 });
 
 export default function Stream() {
-  const { bearerToken } = useAuthStore();
+  const auth = useAuthStore();
   const { mediaId } = useLocalSearchParams();
   const trpc = useTRPC();
 
@@ -25,8 +26,8 @@ export default function Stream() {
 
   const player = useVideoPlayer(
     {
-      uri: `http://192.168.86.123:10000/media/${mediaId}/stream`,
-      headers: { Authorization: `Bearer ${bearerToken}` },
+      uri: `http://192.168.86.215:10000/media/${mediaId}/stream`,
+      headers: { Authorization: `Bearer ${auth.bearerToken}` },
     },
     (player) => {
       player.play();
@@ -37,7 +38,11 @@ export default function Stream() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      heartbeatMutation.mutate({ params: { mediaId: mediaId as string }, body: { position: player.currentTime } });
+      heartbeatMutation.mutate({
+        params: { mediaId: mediaId as string },
+        headers: { Authorization: `Bearer ${auth.bearerToken}` },
+        body: { position: player.currentTime },
+      });
     }, 900000);
 
     return () => clearInterval(interval);
@@ -45,7 +50,7 @@ export default function Stream() {
 
   return (
     <SafeAreaView className="bg-backgroud">
-      <VideoView className="bg-black" player={player} style={{ width, height }} />
+      <VideoView allowsFullscreen={false} className="bg-black" player={player} style={{ width, height }} />
     </SafeAreaView>
   );
 }

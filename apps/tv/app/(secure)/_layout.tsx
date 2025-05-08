@@ -1,13 +1,14 @@
 import "~/global.css";
 
 import { TextInput, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+
+import { Stack } from "expo-router";
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Stack } from "expo-router";
-import { GalleryVerticalEnd } from "lucide-react-native";
+import { GalleryVerticalEnd, Loader2Icon } from "lucide-react-native";
 import { cssInterop } from "nativewind";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import { useAuthStore } from "~/stores/auth";
 
@@ -29,7 +30,7 @@ export default function SecureLayout() {
   const mutation = useMutation(
     trpc.sessions.post.mutationOptions({
       onSuccess: async (data) => {
-        auth.setBearerToken(data.token);
+        void auth.setBearerToken(data.token);
       },
     }),
   );
@@ -39,8 +40,8 @@ export default function SecureLayout() {
       email: "",
       password: "",
     },
-    onSubmit: ({ value }) => {
-      mutation.mutate({ body: value });
+    onSubmit: async ({ value }) => {
+      await mutation.mutateAsync({ body: value });
     },
   });
 
@@ -101,9 +102,21 @@ export default function SecureLayout() {
                 )}
               />
 
-              <Button onPress={form.handleSubmit} size="lg">
-                <Text className="font-medium">Login</Text>
-              </Button>
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting]}
+                children={([canSubmit, isSubmitting]) => (
+                  <Button disabled={!canSubmit} onPress={form.handleSubmit} size="lg">
+                    {isSubmitting && <Loader2Icon className="h-4 w-4 animate-spin" color="hsl(0 0% 98%)" />}
+                    <Text className="font-medium">Login</Text>
+                  </Button>
+                )}
+              />
+
+              {mutation.isError && (
+                <View>
+                  <Text className="text-destructive">{JSON.stringify(mutation.error)}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>

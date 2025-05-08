@@ -3,8 +3,9 @@
   "printWidth": 120,
   "importOrder": [
     "^~/(.*).css$",
-    "~/../gateway",
-    "^react",
+    "^@sfls/gateway$",
+    "^(react|react-native)$",
+    "^expo",
     "<THIRD_PARTY_MODULES>",
     "^~/stores",
     "^~/lib",

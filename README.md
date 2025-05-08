@@ -20,10 +20,27 @@ Selfless is a media server written in Rust, designed to efficently manage and se
 You can quickly start the server using this docker compose file
 ```
 services:
+  server:
+    image: ghcr.io/reilley64/sfls/server:master
+    environment:
+      RUST_LOG: info
+      DATABASE_URL: postgresql://sfls:sfls@database:5432/sfls
+    ports:
+      - "10000:8080"
+    depends_on:
+      - database
+
+  gateway:
+    image: ghcr.io/reilley64/sfls/gateway:master
+    environment:
+      BASE_URL: http://server:8080
+    ports:
+      - "10001:3000"
+    depends_on:
+      - server
+
   database:
     image: pgedge/pgedge:pg16-latest
-    ports:
-      - "5432:5432"
     volumes:
       - "./db.json:/home/pgedge/db.json"
 ```

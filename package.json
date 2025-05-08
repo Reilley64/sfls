@@ -1,0 +1,13 @@
+{
+  "name": "sfls",
+  "workspaces": [ "apps/*" ],
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/bun": "latest",
+    "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "typescript": "^5"
+  }
+}

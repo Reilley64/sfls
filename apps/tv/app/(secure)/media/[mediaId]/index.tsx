@@ -1,13 +1,16 @@
 import { Fragment } from "react";
 import * as React from "react";
 import { Dimensions, View } from "react-native";
-import Animated from "react-native-reanimated";
 
-import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+
+import { useQuery } from "@tanstack/react-query";
 import { ClapperboardIcon, PlayIcon, TvIcon } from "lucide-react-native";
+import Animated from "react-native-reanimated";
+
+import { useAuthStore } from "~/stores/auth";
 
 import { useTRPC } from "~/lib/trpc";
 import { cn } from "~/lib/utils";
@@ -16,13 +19,19 @@ import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 
 export default function Media() {
+  const auth = useAuthStore();
   const { mediaId } = useLocalSearchParams();
   const router = useRouter();
   const trpc = useTRPC();
 
   const { width, height } = Dimensions.get("window");
 
-  const query = useQuery(trpc.media._media_id.get.queryOptions({ params: { mediaId: mediaId as string } }));
+  const query = useQuery(
+    trpc.media._media_id.get.queryOptions({
+      params: { mediaId: mediaId as string },
+      headers: { Authorization: `Bearer ${auth.bearerToken}` },
+    }),
+  );
 
   return (
     <View className="flex min-h-screen w-full flex-col bg-background">
@@ -34,7 +43,7 @@ export default function Media() {
         <Image
           cachePolicy="memory"
           className="h-full w-full object-cover"
-          source={`http://192.168.86.123:10000/media/${mediaId}/fanart`}
+          source={`http://192.168.86.215:10000/media/${mediaId}/images/background`}
         />
         <LinearGradient
           className="absolute inset-0"
@@ -46,7 +55,7 @@ export default function Media() {
         <Image
           cachePolicy="memory"
           className="absolute bottom-0"
-          source={`http://192.168.86.123:10000/media/${mediaId}/logo`}
+          source={`http://192.168.86.215:10000/media/${mediaId}/images/logo`}
           style={{ height: 99.2, width: 256 }}
         />
       </Animated.View>
