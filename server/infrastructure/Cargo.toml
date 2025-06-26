@@ -1,0 +1,22 @@
+[package]
+name = "infrastructure"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+application = { path = "../application" }
+domain = { path = "../domain" }
+
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+deadpool = "0.12.2"
+diesel = { workspace = true }
+diesel-async = { workspace = true }
+diesel_json = "0.2.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+num_cpus = "1.16.0"
+tracing = "0.1.41"
+rand = "0.9.1"

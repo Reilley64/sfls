@@ -1,6 +1,6 @@
 import "~/global.css";
 
-import { TextInput, View } from "react-native";
+import { View } from "react-native";
 
 import { Stack } from "expo-router";
 
@@ -15,6 +15,8 @@ import { useAuthStore } from "~/stores/auth";
 import { useTRPC } from "~/lib/trpc";
 
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Text } from "~/components/ui/text";
 
 cssInterop(KeyboardAwareScrollView, {
@@ -63,13 +65,10 @@ export default function SecureLayout() {
                 name="email"
                 children={(field) => (
                   <View className="flex flex-col gap-2">
-                    <Text className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Email
-                    </Text>
-                    <TextInput
+                    <Label>Email</Label>
+                    <Input
                       id={field.name}
                       autoCapitalize="none"
-                      className="flex h-11 w-full animate-none rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground transition-none file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:border-white disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                       hasTVPreferredFocus
                       keyboardType="email-address"
                       onBlur={field.handleBlur}
@@ -85,16 +84,15 @@ export default function SecureLayout() {
                 name="password"
                 children={(field) => (
                   <View className="flex flex-col gap-2">
-                    <Text className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Password
-                    </Text>
-                    <TextInput
+                    <Label>Password</Label>
+                    <Input
                       id={field.name}
+                      autoComplete="current-password"
                       autoCapitalize="none"
-                      className="flex h-11 w-full animate-none rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground transition-none file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:border-white disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                       hasTVPreferredFocus
                       onBlur={field.handleBlur}
                       onChangeText={(value) => field.handleChange(value)}
+                      secureTextEntry
                       textContentType="password"
                       value={field.state.value}
                     />
@@ -105,9 +103,11 @@ export default function SecureLayout() {
               <form.Subscribe
                 selector={(state) => [state.canSubmit, state.isSubmitting]}
                 children={([canSubmit, isSubmitting]) => (
-                  <Button disabled={!canSubmit} onPress={form.handleSubmit} size="lg">
-                    {isSubmitting && <Loader2Icon className="h-4 w-4 animate-spin" color="hsl(0 0% 98%)" />}
-                    <Text className="font-medium">Login</Text>
+                  <Button disabled={!canSubmit} onPress={form.handleSubmit}>
+                    <View className="flex flex-row items-center gap-2">
+                      {isSubmitting && <Loader2Icon className="h-4 w-4 animate-spin" color="hsl(0 0% 98%)" />}
+                      <Text>Login</Text>
+                    </View>
                   </Button>
                 )}
               />

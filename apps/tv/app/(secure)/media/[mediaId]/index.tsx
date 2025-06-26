@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import * as React from "react";
 import { Dimensions, View } from "react-native";
 
@@ -38,7 +37,7 @@ export default function Media() {
       <Animated.View
         className="relative ml-[98px]"
         sharedTransitionTag={`backdrop-${mediaId}`}
-        style={{ height: height / 2, width: width - 98 }}
+        style={{ height: height / 2 - 24, width: width - 98 }}
       >
         <Image
           cachePolicy="memory"
@@ -47,11 +46,11 @@ export default function Media() {
         />
         <LinearGradient
           className="absolute inset-0"
-          colors={["hsl(240 10% 3.9%)", "transparent"]}
+          colors={["black", "transparent"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
         />
-        <LinearGradient className="absolute inset-0" colors={["transparent", "hsl(240 10% 3.9%)"]} />
+        <LinearGradient className="absolute inset-0" colors={["transparent", "black"]} />
         <Image
           cachePolicy="memory"
           className="absolute bottom-0"
@@ -76,27 +75,27 @@ export default function Media() {
                 variant="ghost"
               >
                 {({ focused }) => (
-                  <Fragment>
+                  <View className="flex flex-row items-center gap-2">
                     <PlayIcon color={focused ? "black" : "hsl(0 0% 98%)"} height={16} width={16} />
                     <Text className={cn("font-bold", focused && "text-black")}>Play</Text>
-                  </Fragment>
+                  </View>
                 )}
               </Button>
               <Button className="focus:bg-white" variant="ghost">
                 {({ focused }) => (
-                  <Fragment>
+                  <View className="flex flex-row items-center gap-2">
                     <ClapperboardIcon color={focused ? "black" : "hsl(0 0% 98%)"} height={16} width={16} />
                     <Text className={cn("font-bold", focused && "text-black")}>Trailer</Text>
-                  </Fragment>
+                  </View>
                 )}
               </Button>
               {query.data.type === "tvshow" && (
                 <Button className="focus:bg-white" variant="ghost">
                   {({ focused }) => (
-                    <Fragment>
+                    <View className="flex flex-row items-center gap-2">
                       <TvIcon color={focused ? "black" : "hsl(0 0% 98%)"} height={16} width={16} />
                       <Text className={cn("font-bold", focused && "text-black")}>Episodes</Text>
-                    </Fragment>
+                    </View>
                   )}
                 </Button>
               )}

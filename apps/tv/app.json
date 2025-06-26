@@ -33,7 +33,8 @@
     "ios": {
       "splash": {
         "image": "./assets/images/splash.png"
-      }
+      },
+      "bundleIdentifier": "com.anonymous.SFLS"
     },
     "web": {
       "bundler": "metro"
@@ -42,7 +43,15 @@
       "typedRoutes": true
     },
     "newArchEnabled": true,
-    "name": "SFLS",
-    "slug": "SFLS"
+    "name": "Selfless",
+    "slug": "SFLS",
+    "userInterfaceStyle": "dark",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2732ed8e-e462-48cb-8fac-42569b53876a"
+      }
+    },
+    "owner": "reilley"
   }
 }

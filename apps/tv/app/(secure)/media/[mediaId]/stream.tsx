@@ -49,8 +49,8 @@ export default function Stream() {
   }, [heartbeatMutation]);
 
   return (
-    <SafeAreaView className="bg-backgroud">
-      <VideoView allowsFullscreen={false} className="bg-black" player={player} style={{ width, height }} />
+    <SafeAreaView className="bg-background">
+      <VideoView allowsFullscreen={false} player={player} style={{ width, height }} />
     </SafeAreaView>
   );
 }

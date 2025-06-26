@@ -1,0 +1,18 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+application = { path = "../application" }
+domain = { path = "../domain" }
+infrastructure = { path = "../infrastructure" }
+
+anyhow = { workspace = true }
+axum = "0.8.4"
+bon = { version = "3.6.3", features = ["experimental-overwritable"] }
+serde = { workspace = true }
+tokio = { workspace = true }
+tower-http = { version = "0.6.2", features = ["trace"] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }

@@ -92,12 +92,12 @@ export default function Home() {
   }
 
   return (
-    <SafeAreaView className="max-w-screen flex min-h-screen w-full flex-col bg-background">
+    <View className="max-w-screen flex min-h-screen w-full flex-col gap-6 bg-background">
       {focusedMedia && (
         <Animated.View
           className="relative ml-[98px]"
           sharedTransitionTag={`backdrop-${focusedMedia.id}`}
-          style={{ height: height / 2, width: width - 98 }}
+          style={{ height: height / 2 - 24, width: width - 98 }}
         >
           <Image
             cachePolicy="memory"
@@ -106,11 +106,11 @@ export default function Home() {
           />
           <LinearGradient
             className="absolute inset-0"
-            colors={["hsl(240 10% 3.9%)", "transparent"]}
+            colors={["black", "transparent"]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
           />
-          <LinearGradient className="absolute inset-0" colors={["transparent", "hsl(240 10% 3.9%)"]} />
+          <LinearGradient className="absolute inset-0" colors={["transparent", "black"]} />
           <Image
             cachePolicy="memory"
             className="absolute bottom-0"
@@ -135,6 +135,7 @@ export default function Home() {
               data={data}
               horizontal
               scrollEnabled={false}
+              showsHorizontalScrollIndicator={false}
               renderItem={({ item: media, index: y }) => (
                 <Pressable
                   className={cn("rounded-xl p-2 transition-transform", y === 0 && "ml-[98px]")}
@@ -164,15 +165,15 @@ export default function Home() {
             />
           )}
           renderSectionHeader={({ section: { title } }) => (
-            <Text className="ml-[98px] font-[Geist] text-2xl font-semibold text-foreground">{title}</Text>
+            <Text className="ml-[98px] font-[Geist] text-xl font-semibold text-foreground">{title}</Text>
           )}
         />
 
         <View
-          className="absolute left-[101px] top-[31px] rounded-2xl border-2 border-white"
+          className="absolute left-[101px] top-[28px] rounded-2xl border-2 border-white"
           style={{ width: 1000 / 7 + 8, height: 1426 / 7 + 8 }}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
